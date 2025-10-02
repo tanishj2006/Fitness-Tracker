@@ -18,16 +18,15 @@ public class imagePanel extends javax.swing.JPanel {
     /**
      * Creates new form imagePanel
      */
-    public imagePanel() {
+    public imagePanel(String imagePath) {
         // Load the image from the resources folder
         // IMPORTANT: Replace "f1/images/bg.jpeg" with the correct path to your image
         try {
-            // Using getResource ensures the image is found when the application is built
-            backgroundImage = new ImageIcon(getClass().getResource("/f1/images/bg.jpeg")).getImage();
+            // Use getClass().getResource() for images packaged with the application
+            backgroundImage = new ImageIcon(getClass().getResource(imagePath)).getImage();
         } catch (Exception e) {
-            System.err.println("Could not load background image: " + e.getMessage());
-            // Optionally set a default color if image fails to load
-            setBackground(java.awt.Color.LIGHT_GRAY); 
+            System.err.println("Could not load image at path: " + imagePath);
+            e.printStackTrace();
         }
     }
     
@@ -36,8 +35,13 @@ public class imagePanel extends javax.swing.JPanel {
         super.paintComponent(g); // Clears the background
 
         if (backgroundImage != null) {
-            // Draw the image, scaling it to fit the panel size
-            g.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
+            // Get the current width and height of the panel
+            int width = getWidth();
+            int height = getHeight();
+
+            // Draw the image scaled to the panel's width and height
+            // The image will stretch/compress to fit the frame/window size
+            g.drawImage(backgroundImage, 0, 0, width, height, this);
         }
     }
 
