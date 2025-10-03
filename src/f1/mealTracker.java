@@ -4,6 +4,9 @@
  */
 package f1;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import javax.swing.JOptionPane;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -11,7 +14,9 @@ import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.HeadlessException;
 import java.awt.Insets;
+import java.sql.SQLException;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -31,11 +36,11 @@ public class mealTracker extends javax.swing.JFrame {
     private JButton saveButton, viewMealsButton, closeButton;
 
     private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(mealTracker.class.getName());
-
+    
     /**
      * Creates new form mealTracker
      */
-    public mealTracker() {
+    public mealTracker(int currentUserId) {
         UI();
     }
 
@@ -52,7 +57,7 @@ public class mealTracker extends javax.swing.JFrame {
         final Color textColor = Color.BLACK;
         final Color fieldTextColor = Color.BLACK;
         final Color caretColor = Color.BLACK;
-        final Font formFont = new Font("SansSerif", Font.PLAIN, 16);
+        final Font formFont = new Font("SansSerif", Font.BOLD, 40); 
         final Font buttonFont = new Font("SansSerif", Font.BOLD, 14);
 
         titleLabel = new JLabel("Add Meal");
@@ -169,7 +174,35 @@ public class mealTracker extends javax.swing.JFrame {
 
         saveButton.addActionListener(e -> {
             System.out.println("Saving Meal: " + mealField.getText() + ", Calories: " + caloriesField.getText() + ", Date: " + dateField.getText());
-            // Add your meal saving logic here (validation, database write)
+            String mealName = mealField.getText();
+            String caloriesText = caloriesField.getText();
+            String date = dateField.getText();
+
+            if(mealName.isEmpty() || caloriesText.isEmpty() || date.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "All fields are required!");
+                return;
+            }
+
+            try {
+                int calories = Integer.parseInt(caloriesText);
+                String sql = "INSERT INTO meals (meal_name, calories, date) VALUES (?, ?, ?)";
+                try (Connection conn = db.DBConnection.getConnection();
+                     PreparedStatement ps = conn.prepareStatement(sql)) {
+                    ps.setString(1, mealName);
+                    ps.setInt(2, calories);
+                    ps.setString(3, date);
+                    ps.executeUpdate();
+                    JOptionPane.showMessageDialog(this, "Meal saved successfully!");
+                    mealField.setText("");
+                    caloriesField.setText("");
+                    dateField.setText("");
+                }
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(this, "Calories must be a number!");
+            } catch (HeadlessException | SQLException ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Error saving meal.");
+            }
         });
 
         viewMealsButton.addActionListener(e -> {
@@ -347,7 +380,7 @@ public class mealTracker extends javax.swing.JFrame {
         //</editor-fold>
 
         /* Create and display the form */
-        java.awt.EventQueue.invokeLater(() -> new mealTracker().setVisible(true));
+        java.awt.EventQueue.invokeLater(() -> new mealTracker(currentUserId).setVisible(true));
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

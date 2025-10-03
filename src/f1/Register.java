@@ -4,11 +4,14 @@
  */
 package f1;
 
+import java.sql.Connection;
+import db.DBConnection;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.HeadlessException;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -140,22 +143,31 @@ public class Register extends javax.swing.JFrame {
         gbc.insets = new Insets(40, 10, 10, 10);
         backgroundPanel.add(submitButton, gbc);
         
-        submitButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-          
-                String name = nameField.getText();
+        submitButton.addActionListener((ActionEvent e) -> {
+            try {
+                String name1 = nameField.getText();
                 String password = new String(passwordField.getPassword());
-                String weight = weightField.getText();
-                String height = heightField.getText();
-                
-                System.out.println("Attempting to register: " + name);
-                // Add your actual registration logic (database interaction, validation) here.
-                
-                // Example: Open Login Page after successful registration
-                 Login loginPage = new Login();
-                 loginPage.setVisible(true);
-                 dispose(); 
+                double weight = Double.parseDouble(weightField.getText());
+                double height1 = Double.parseDouble(heightField.getText());
+                if (name1.isEmpty() || password.isEmpty()) {
+                    javax.swing.JOptionPane.showMessageDialog(null, "Name and password cannot be empty!");
+                    return;
+                }
+                int userId = registerUser(name1, password, weight, height1);
+                if (userId != -1) {
+                    javax.swing.JOptionPane.showMessageDialog(null, "Registration successful! User ID: " + userId);
+                    
+                    // After successful registration -> move to login
+                    Login loginPage = new Login();
+                    loginPage.setVisible(true);
+                    dispose();
+                } else {
+                    javax.swing.JOptionPane.showMessageDialog(null, "Registration failed! Maybe username already exists.");
+                }
+            }catch (NumberFormatException ex) {
+                javax.swing.JOptionPane.showMessageDialog(null, "Weight and height must be numbers.");
+            }catch (HeadlessException ex) {
+                ex.printStackTrace();
             }
         });
 
@@ -163,6 +175,36 @@ public class Register extends javax.swing.JFrame {
         revalidate();
         repaint();
     }
+    
+  public static int registerUser(String name, String password, double weight, double height) {
+    int userId = -1;
+    String sql = "INSERT INTO users (name, password, weight, height) VALUES (?, ?, ?, ?)";
+    try (Connection conn = db.DBConnection.getConnection();
+         java.sql.PreparedStatement ps = conn.prepareStatement(sql, java.sql.Statement.RETURN_GENERATED_KEYS)) {
+
+        ps.setString(1, name);
+        ps.setString(2, password);
+        ps.setDouble(3, weight);
+        ps.setDouble(4, height);
+
+        int rows = ps.executeUpdate();
+
+        if (rows > 0) {
+            try (var rs = ps.getGeneratedKeys()) {
+                if (rs.next()) {
+                    userId = rs.getInt(1); // Auto-generated user id (unique per user)
+                }
+            }
+        }
+
+        System.out.println("User registered with ID: " + userId);
+
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+    return userId;
+}
+
 
     /**
      * This method is called from within the constructor to initialize the form.

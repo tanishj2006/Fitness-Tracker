@@ -4,6 +4,9 @@
  */
 package f1;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -34,12 +37,12 @@ public class viewMeals extends JDialog {
     private final String[] COLUMN_NAMES = {"Meal", "Calories", "Date"};
     /**
      * Creates new form viewMeals
+     * @param owner
      */
     public viewMeals(JFrame owner) {
         super(owner, "View Recorded Meals", true); 
         setupDialogUI();
-        // Load example data after UI is set up
-//        loadExampleData();
+         loadMeals();
     }
     
     private void setupDialogUI() {
@@ -78,25 +81,24 @@ public class viewMeals extends JDialog {
 
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
     }
-    
-    private void loadExampleData() {
-        // Clear existing data
-        tableModel.setRowCount(0); 
-        
-        // Example meal data
-        Object[][] data = {
-            {"Chicken Breast & Rice", "450", "25/10/2025"},
-            {"Protein Shake", "180", "25/10/2025"},
-            {"Salmon & Salad", "550", "24/10/2025"},
-            {"Oatmeal with Berries", "320", "24/10/2025"}
-        };
-        
-        // Add data to the table model
-        for (Object[] row : data) {
+    private void loadMeals() {
+    tableModel.setRowCount(0); 
+    String sql = "SELECT * FROM meals";
+    try (Connection conn = db.DBConnection.getConnection();
+         PreparedStatement ps = conn.prepareStatement(sql);
+         ResultSet rs = ps.executeQuery()) {
+
+        while (rs.next()) {
+            Object[] row = new Object[3];
+            row[0] = rs.getString("meal_name");
+            row[1] = rs.getInt("calories");
+            row[2] = rs.getString("date");
             tableModel.addRow(row);
         }
+    } catch (Exception e) {
+        e.printStackTrace();
     }
-
+}
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always

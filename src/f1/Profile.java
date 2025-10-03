@@ -1,7 +1,3 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
- */
 package f1;
 
 import java.awt.Color;
@@ -12,11 +8,12 @@ import java.awt.Insets;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import javax.swing.JOptionPane;
 
-/**
- *
- * @author tanishj52
- */
 public class Profile extends JDialog {
     
     private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(Profile.class.getName());
@@ -24,17 +21,43 @@ public class Profile extends JDialog {
     private String userName;
     private String userHeight;
     private String userWeight;
-    /**
-     * Creates new form ProfileDialog
-     */
-    public Profile(JFrame owner, String name, String height, String weight) {
+    private final int currentUserId; 
+    
+    public Profile(JFrame owner, int userId) {
         super(owner, "User Profile", true); 
-        this.userName = name;
-        this.userHeight = height;
-        this.userWeight = weight;
+        this.currentUserId = userId;
         
+        loadUserData();  
         setupDialogUI();
     }
+    
+    private void loadUserData() {
+        String sql = "SELECT name, height, weight FROM users WHERE id = ?";
+        try (Connection conn = db.DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            
+            ps.setInt(1, currentUserId);
+            ResultSet rs = ps.executeQuery();
+            
+            if (rs.next()) {
+                userName = rs.getString("name");
+                userHeight = rs.getString("height");
+                userWeight = rs.getString("weight");
+            } else {
+                userName = "Unknown";
+                userHeight = "-";
+                userWeight = "-";
+                JOptionPane.showMessageDialog(this, "User not found!");
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Error fetching user data!");
+            userName = "Error";
+            userHeight = "-";
+            userWeight = "-";
+        }
+    }
+    
     
     private void setupDialogUI() {
         setSize(300, 250);
@@ -57,42 +80,26 @@ public class Profile extends JDialog {
         add(title, gbc);
         
         gbc.gridwidth = 1;
-        gbc.anchor = GridBagConstraints.WEST; // Reset alignment for form fields
+        gbc.anchor = GridBagConstraints.WEST;
 
-        // 1. Name
-        JLabel nameLbl = new JLabel("Name:");
-        nameLbl.setFont(labelFont);
-        gbc.gridx = 0; gbc.gridy = 1;
-        add(nameLbl, gbc);
-        
-        JLabel nameVal = new JLabel(userName);
-        nameVal.setFont(valueFont);
-        gbc.gridx = 1; gbc.gridy = 1;
-        add(nameVal, gbc);
+        // Name
+        addRow("Name:", userName, labelFont, valueFont, gbc, 1);
+        addRow("Height:", userHeight, labelFont, valueFont, gbc, 2);
+        addRow("Weight:", userWeight, labelFont, valueFont, gbc, 3);
 
-        // 2. Height
-        JLabel heightLbl = new JLabel("Height:");
-        heightLbl.setFont(labelFont);
-        gbc.gridx = 0; gbc.gridy = 2;
-        add(heightLbl, gbc);
-
-        JLabel heightVal = new JLabel(userHeight);
-        heightVal.setFont(valueFont);
-        gbc.gridx = 1; gbc.gridy = 2;
-        add(heightVal, gbc);
-
-        // 3. Weight
-        JLabel weightLbl = new JLabel("Weight:");
-        weightLbl.setFont(labelFont);
-        gbc.gridx = 0; gbc.gridy = 3;
-        add(weightLbl, gbc);
-
-        JLabel weightVal = new JLabel(userWeight);
-        weightVal.setFont(valueFont);
-        gbc.gridx = 1; gbc.gridy = 3;
-        add(weightVal, gbc);
-        
         pack(); 
+    }
+    
+    private void addRow(String label, String value, Font labelFont, Font valueFont, GridBagConstraints gbc, int row) {
+        JLabel lbl = new JLabel(label);
+        lbl.setFont(labelFont);
+        gbc.gridx = 0; gbc.gridy = row;
+        add(lbl, gbc);
+        
+        JLabel val = new JLabel(value);
+        val.setFont(valueFont);
+        gbc.gridx = 1; gbc.gridy = row;
+        add(val, gbc);
     }
 
     /**
@@ -142,10 +149,11 @@ public class Profile extends JDialog {
         //</editor-fold>
 
         /* Create and display the form */
-        Profile dialog = new Profile(null, "Tanish", "175 cm", "75 kg");
+        int testUserId = 1; 
+        Profile dialog = new Profile(null, testUserId);
         dialog.setVisible(true);
     }
+ }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     // End of variables declaration//GEN-END:variables
-}

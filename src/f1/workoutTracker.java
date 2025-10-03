@@ -3,7 +3,9 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
  */
 package f1;
-
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -17,6 +19,7 @@ import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
@@ -33,12 +36,22 @@ public class workoutTracker extends javax.swing.JFrame {
     private JComboBox<String> workoutComboBox, timeComboBox;
     private JTextField caloriesBurnedField;
     private JButton saveButton, viewWorkoutsButton, closeButton;
+    private final int currentUserId; 
     /**
      * Creates new form workoutTracker
+     * @param userId
      */
-    public workoutTracker() {
+
+
+    public workoutTracker(int userId) {
+        this.currentUserId = userId; // store the logged-in user's ID
         UI();
     }
+
+    private workoutTracker() {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    }
+
     
     private void UI() {
         setTitle("Workout Tracker");
@@ -61,7 +74,7 @@ public class workoutTracker extends javax.swing.JFrame {
         caloriesBurnedLabel = new JLabel("Calories burned :");
         
         String[] workouts = {"Select","Running", "Weight Lifting", "Cycling", "Yoga"};
-        String[] times = {"Select","30 mins", "45 mins", "60 mins", "90 mins"};
+        String[] times = {"Select","30", "45", "60", "90"};
         workoutComboBox = new JComboBox<>(workouts);
         timeComboBox = new JComboBox<>(times);
         
@@ -158,23 +171,49 @@ public class workoutTracker extends javax.swing.JFrame {
             String time = (String) timeComboBox.getSelectedItem();
             String calories = caloriesBurnedField.getText();
             System.out.println("Saving Workout: " + workout + " for " + time + ", Burned: " + calories);
-            // Add your workout saving logic here
-        });
-        
+            if(workout.equals("Select") || time.equals("Select") || calories.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Please fill all fields!");
+                return;
+            }
+
+            try {
+                int timeInt = Integer.parseInt(time);
+                int caloriesInt = Integer.parseInt(calories);
+
+                String sql = "INSERT INTO workouts (user_id, workout_name, duration_mins, calories_burned) VALUES (?, ?, ?, ?)";
+                try (Connection conn = db.DBConnection.getConnection();
+                     PreparedStatement ps = conn.prepareStatement(sql)) {
+
+                    ps.setInt(1, currentUserId);
+                    ps.setString(2, workout);
+                    ps.setInt(3, timeInt);
+                    ps.setInt(4, caloriesInt);
+                    ps.executeUpdate();
+                    JOptionPane.showMessageDialog(this, "Workout saved successfully!");
+
+                    workoutComboBox.setSelectedIndex(0);
+                    timeComboBox.setSelectedIndex(0);
+                    caloriesBurnedField.setText("");
+                }
+
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(this, "Time and Calories must be numbers!");
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Error saving workout!");
+            }
+});
+     
         viewWorkoutsButton.addActionListener(e -> {
-            System.out.println("Opening View Workouts Window...");
-            // You will need to create a ViewWorkoutsDialog class, similar to ViewMealsDialog
-            // Example: new ViewWorkoutsDialog(this).setVisible(true);
-            viewWorkout dialog = new viewWorkout(this); 
-            dialog.setVisible(true);
-        });
-        
+        System.out.println("Opening View Workouts Window for user: " + currentUserId);
+        viewWorkout dialog = new viewWorkout(this, currentUserId);  // ✅ pass userId
+    dialog.setVisible(true);
+});        
         closeButton.addActionListener(e -> {
             dispose();
         });
 
         setVisible(true);
-        revalidate();
         repaint();
     }
 
@@ -231,6 +270,11 @@ public class workoutTracker extends javax.swing.JFrame {
 
         jButton3.setFont(new java.awt.Font("SansSerif", 1, 18)); // NOI18N
         jButton3.setText("Save");
+        jButton3.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton3ActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -295,6 +339,10 @@ public class workoutTracker extends javax.swing.JFrame {
         // TODO add your handling code here:
     }//GEN-LAST:event_jTextField1ActionPerformed
 
+    private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jButton3ActionPerformed
+
     /**
      * @param args the command line arguments
      */
@@ -304,6 +352,7 @@ public class workoutTracker extends javax.swing.JFrame {
         /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
          * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
          */
+        java.awt.EventQueue.invokeLater(() -> new workoutTracker(1).setVisible(true));
         try {
             for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
                 if ("Nimbus".equals(info.getName())) {
@@ -315,9 +364,9 @@ public class workoutTracker extends javax.swing.JFrame {
             logger.log(java.util.logging.Level.SEVERE, null, ex);
         }
         //</editor-fold>
+         java.awt.EventQueue.invokeLater(() -> new workoutTracker(1).setVisible(true));
 
         /* Create and display the form */
-        java.awt.EventQueue.invokeLater(() -> new workoutTracker().setVisible(true));
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

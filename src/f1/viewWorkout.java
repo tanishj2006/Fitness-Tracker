@@ -4,7 +4,10 @@
  */
 package f1;
 
-import static java.awt.AWTEventMulticaster.add;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.PreparedStatement;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -14,6 +17,7 @@ import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
@@ -30,16 +34,20 @@ public class viewWorkout extends JDialog {
     private JTable workoutTable;
     private DefaultTableModel tableModel;
     private JButton closeButton;
-    private final String[] COLUMN_NAMES = {"Workout", "Time", "Calories Burned", "Date"};
+    private final String[] COLUMN_NAMES = {"Workout", "Time", "Calories Burned"};
     /**
      * Creates new form viewWorkout
+     * @param owner
      */
-    public viewWorkout(JFrame owner) {
-        super(owner, "View Recorded Workouts", true); // true makes it modal
-        setupDialogUI();
-        // Load example data after UI is set up
-//        loadExampleData(); 
-    }
+    private final int currentUserId;
+
+  public viewWorkout(JFrame owner, int userId) {
+    super(owner, "View Recorded Workouts", true);
+    this.currentUserId = userId;
+    setupDialogUI();
+    loadDataFromDatabase();
+}
+
     
     private void setupDialogUI() {
         setSize(650, 450); 
@@ -81,31 +89,93 @@ public class viewWorkout extends JDialog {
     /**
      * This method simulates loading data. In a real app, this would query a database.
      */
-    private void loadExampleData() {
-        // Clear existing data
-        tableModel.setRowCount(0); 
-        
-        // Example workout data
-        Object[][] data = {
-            {"Running", "45 mins", "400", "26/10/2025"},
-            {"Weight Lifting", "60 mins", "350", "26/10/2025"},
-            {"Yoga", "30 mins", "150", "25/10/2025"},
-            {"Cycling", "90 mins", "700", "24/10/2025"}
-        };
-        
-        // Add data to the table model
-        for (Object[] row : data) {
-            tableModel.addRow(row);
+    private void loadDataFromDatabase() {
+    tableModel.setRowCount(0); // Clear previous data
+
+    String sql = "SELECT workout_name, duration_mins, calories_burned FROM workouts WHERE user_id = ? ORDER BY id DESC";
+
+    try (Connection conn = db.DBConnection.getConnection();
+         PreparedStatement ps = conn.prepareStatement(sql)) {
+
+        ps.setInt(1, currentUserId);   // filter by logged-in user
+        ResultSet rs = ps.executeQuery();
+
+        boolean hasData = false;
+        while (rs.next()) {
+            hasData = true;
+            String workout = rs.getString("workout_name");
+            int duration = rs.getInt("duration_mins");
+            String time = duration + " mins";
+            int calories = rs.getInt("calories_burned");
+
+            tableModel.addRow(new Object[]{workout, time, calories});
         }
+
+        if (!hasData) {
+            JOptionPane.showMessageDialog(this, "No workouts found for this user!");
+        }
+
+    } catch (SQLException ex) {
+        ex.printStackTrace();
+        JOptionPane.showMessageDialog(this, "Error loading workouts from database!");
     }
-
-
+}
+//    private void loadDataFromDatabase() {
+//   tableModel.setRowCount(0); // Clear previous data
+//
+//    // Use exact column names from your database
+//    String sql = "SELECT workout_name, duration_mins, calories_burned FROM workouts ORDER BY id DESC";
+//
+//    try (Connection conn = db.DBConnection.getConnection();
+//         Statement stmt = conn.createStatement();
+//         ResultSet rs = stmt.executeQuery(sql)) {
+//
+//        while (rs.next()) {
+//            String workout = rs.getString("workout_name");
+//            int timeMinutes = rs.getInt("duration_mins");
+//            String time = timeMinutes + " mins";
+//            int calories = rs.getInt("calories_burned");           
+//
+//            Object[] row = {workout, time, calories};
+//            tableModel.addRow(row);
+//        }
+//
+//    } catch (SQLException ex) {
+//        ex.printStackTrace();
+//        JOptionPane.showMessageDialog(this, "Error loading workouts from database!");
+//    }
+//    try (Connection conn = db.DBConnection.getConnection();
+//     Statement stmt = conn.createStatement();
+//     ResultSet rs = stmt.executeQuery(sql)) {
+//
+//    boolean hasData = false;
+//    while (rs.next()) {
+//        hasData = true;
+//        String workout = rs.getString("workout_name");
+//        int duration = rs.getInt("duration_mins");
+//        String time = duration + " mins";
+//        int calories = rs.getInt("calories_burned");
+//
+//        System.out.println(workout + " | " + time + " | " + calories); // debug output
+//        tableModel.addRow(new Object[]{workout, time, calories});
+//    }
+//
+//    if (!hasData) {
+//        JOptionPane.showMessageDialog(this, "No data found in the database!");
+//    }
+//
+//} catch (SQLException ex) {
+//    ex.printStackTrace();
+//    JOptionPane.showMessageDialog(this, "Error loading workouts from database!");
+//}
+//}
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
      * regenerated by the Form Editor.
      */
-    @SuppressWarnings("unchecked")
+    // </editor-fold>
+@SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
@@ -147,8 +217,8 @@ public class viewWorkout extends JDialog {
         //</editor-fold>
 
         /* Create and display the form */
-        viewWorkout dialog = new viewWorkout(null);
-        dialog.setVisible(true);
+       int testUserId = 1; 
+        new viewWorkout(null, testUserId).setVisible(true);  
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

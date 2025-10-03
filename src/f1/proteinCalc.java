@@ -46,7 +46,7 @@ public class proteinCalc extends javax.swing.JFrame {
     /**
      * Creates new form proteinCalc
      */
-    public proteinCalc() {
+    public proteinCalc(int currentUserId) {
         UI();
     }
 
@@ -477,7 +477,7 @@ public class proteinCalc extends javax.swing.JFrame {
         //</editor-fold>
 
         /* Create and display the form */
-        java.awt.EventQueue.invokeLater(() -> new proteinCalc().setVisible(true));
+        java.awt.EventQueue.invokeLater(() -> new proteinCalc(currentUserId).setVisible(true));
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

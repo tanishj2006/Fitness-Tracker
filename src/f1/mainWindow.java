@@ -4,6 +4,9 @@
  */
 package f1;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -38,10 +41,14 @@ public class mainWindow extends javax.swing.JFrame {
     /**
      * Creates new form mainWindow
      */
-    public mainWindow() {
+    private final int currentUserId;  
+    public mainWindow(int userId) {
+        this.currentUserId = userId;  
         setupUI();
     }
-
+     public mainWindow() {
+        this(-1); 
+    }
     private void setupUI() {
         setTitle("Fitness Tracker - Dashboard");
         setSize(800, 700);
@@ -86,35 +93,44 @@ public class mainWindow extends javax.swing.JFrame {
         logoutBtn.setContentAreaFilled(false);
         logoutBtn.setBorder(BorderFactory.createLineBorder(textColor));
 
-        profileBtn.addActionListener(e -> {
-            // --- 1. Hardcoded Example Data (REPLACE THIS) ---
-            // In a real app, you'd load this from your user object or database
-            String name = "Tanish Jain";
-            String height = "175 cm";
-            String weight = "75 kg";
-            // ------------------------------------------------
+//    profileBtn.addActionListener(e -> {
+//            try (Connection conn = db.DBConnection.getConnection();
+//                 PreparedStatement ps = conn.prepareStatement("SELECT name, height, weight FROM users WHERE id = ?")) {
+//
+//                ps.setInt(1, currentUserId);
+//                ResultSet rs = ps.executeQuery();
+//                if (rs.next()) {
+//                    String name = rs.getString("name");
+//                    String height = rs.getDouble("height") + " cm";
+//                    String weight = rs.getDouble("weight") + " kg";
+//
+//                    Profile pf = new Profile(this, name, height, weight);
+//                    pf.setVisible(true);
+//                }
+//            } catch (Exception ex) {
+//                ex.printStackTrace();
+//            }
+//        });   
+profileBtn.addActionListener(e -> {
+    // Open Profile dialog; Profile will fetch user data itself using userId
+    // Use mainWindow.this to pass the outer JFrame as owner (not the ActionListener)
+    Profile pf = new Profile(mainWindow.this, currentUserId);
+    pf.setVisible(true);
+});
 
-            // 2. Create and show the dialog
-            Profile pf = new Profile(this, name, height, weight);
-            pf.setVisible(true);
-        });
-        logoutBtn.addActionListener(e -> {
-            System.out.println("Logging out...");
-            dispose();
-            firstPage f = new firstPage();// Example to return to login screen
-            f.setVisible(true);
-        });
-
-        navPanel.add(profileBtn);
-        navPanel.add(logoutBtn);
+         logoutBtn.addActionListener(e -> {
+    this.dispose(); 
+    new Login().setVisible(true); 
+});
+     navPanel.add(profileBtn);
+    navPanel.add(logoutBtn);
         return navPanel;
-    }
-
+ }
+   
     private JPanel createContentPanel() {
         JPanel contentPanel = new JPanel(new GridBagLayout());
 
         Font buttonFont = new Font("SansSerif", Font.BOLD, 18);
-        Color btnColor = new Color(50, 50, 50, 150); 
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(15, 15, 15, 15);
@@ -129,39 +145,48 @@ public class mainWindow extends javax.swing.JFrame {
 
         JButton[] buttons = {mealTrackerBtn, workoutTrackerBtn, calorieCalcBtn, proteinCalcBtn};
 
-        for (int i = 0; i < buttons.length; i++) {
-            JButton btn = buttons[i];
-            btn.setFont(buttonFont);
-            btn.setBackground(btnColor);
-            btn.setForeground(Color.WHITE);
-            btn.setFocusPainted(false);
+for (int i = 0; i < buttons.length; i++) {
+    JButton btn = buttons[i];
+    btn.setFont(buttonFont);
 
-            gbc.gridx = i % 2; 
-            gbc.gridy = i / 2; 
-            contentPanel.add(btn, gbc);
+    
+    btn.setBackground(Color.BLACK);                        
+    btn.setForeground(Color.WHITE);                        
+    btn.setOpaque(true);                                  
+    btn.setContentAreaFilled(true);                       
+    btn.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20)); 
+    btn.setFocusPainted(false);                            
+    btn.setFocusable(false);                               
 
-            btn.addActionListener(e -> {
-                String buttonText = btn.getText();
-                JFrame targetFrame = null;
+    gbc.gridx = i % 2;
+    gbc.gridy = i / 2;
+    contentPanel.add(btn, gbc);
 
-                
-                if (buttonText.equals("Meal Tracker")) {
-                    targetFrame = new mealTracker();
-                } else if (buttonText.equals("Workout Tracker")) {
-                    targetFrame = new workoutTracker();
-                } else if (buttonText.equals("Calorie Calculator")) {
-                    targetFrame = new calorieCalc();
-                } else if (buttonText.equals("Protein Calculator")) {
-                    targetFrame = new proteinCalc();
-                }
+    btn.addActionListener(e -> {
+        String buttonText = btn.getText();
+        JFrame targetFrame = null;
 
-                if (targetFrame != null) {
-                    targetFrame.setVisible(true);
-                    // Hide the main dashboard, but don't close the entire application
-//                    mainWindow.this.setVisible(false); // Use mainWindoe.this to refer to the outer JFrame
-                }
-            });
+        switch (buttonText) {
+            case "Meal Tracker":
+                targetFrame = new mealTracker(currentUserId);
+                break;
+            case "Workout Tracker":
+                targetFrame = new workoutTracker(currentUserId);
+                break;
+            case "Calorie Calculator":
+                targetFrame = new calorieCalc(currentUserId);
+                break;
+            case "Protein Calculator":
+                targetFrame = new proteinCalc(currentUserId);
+                break;
         }
+
+        if (targetFrame != null) {
+            targetFrame.setVisible(true);
+        }
+    });
+}
+
 
         dashboardPanel = new JPanel(new BorderLayout());
         dashboardPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20)); // Padding inside panel
@@ -217,9 +242,7 @@ public class mainWindow extends javax.swing.JFrame {
     }
 
     public void updateDashboardSummary() {
-        // --- EXAMPLE DATA (REPLACE WITH REAL LOGIC) ---
-        // You can use actual data from your meal/workout trackers here
-        int totalConsumed = 2150; //TODO ye change krna
+        int totalConsumed = 2150; 
         int totalBurned = 500;
         int netCalories = totalConsumed - totalBurned;
         // ------------------------------------------------
@@ -507,8 +530,8 @@ public class mainWindow extends javax.swing.JFrame {
         } catch (Exception e) {
             /* silently ignore */ }
         /* Create and display the form */
-        java.awt.EventQueue.invokeLater(() -> new mainWindow().setVisible(true));
-    }
+      java.awt.EventQueue.invokeLater(() -> new Login().setVisible(true));
+}
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButton1;
