@@ -4,6 +4,12 @@
  */
 package f1;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+import java.time.LocalDateTime;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
@@ -41,13 +47,15 @@ public class calorieCalc extends javax.swing.JFrame {
     private JLabel maintainLabel;
     private JLabel gainLabel;
     private JLabel lossLabel;
+    private final int currentUserId;
 
     /**
      * Creates new form calorieCalc
      */
-    public calorieCalc() {
-        UI();
-    }
+    public calorieCalc(int currentUserId) {
+    this.currentUserId = currentUserId;
+    UI();
+}
 
     private void UI() {
         setTitle("Calorie Calculator");
@@ -322,6 +330,31 @@ public class calorieCalc extends javax.swing.JFrame {
                 maintainLabel.setText("Maintenance: " + maintenanceCalories + " calories/day");
                 gainLabel.setText("Muscle Gain: " + gainCalories + " calories/day");
                 lossLabel.setText("Fat Loss: " + lossCalories + " calories/day");
+                
+               
+                String gender = isMale ? "Male" : "Female";
+                String exerciseType = (String) exerciseTypeCombo.getSelectedItem();
+
+                String sql = "INSERT INTO calorie_records (user_id, age, gender, height, weight, exercise_type) "
+                           + "VALUES (?, ?, ?, ?, ?, ?)";
+
+                try (Connection conn = db.DBConnection.getConnection();
+                     PreparedStatement ps = conn.prepareStatement(sql)) {
+
+                    ps.setInt(1, currentUserId);        
+                    ps.setInt(2, age);
+                    ps.setString(3, gender);
+                    ps.setDouble(4, height);
+                    ps.setDouble(5, weight);
+                    ps.setString(6, exerciseType);
+
+                    ps.executeUpdate();
+                    System.out.println("Calorie record saved to DB!");
+
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog(this, "Error saving calorie record!");
+                }
 
             } catch (NumberFormatException ex) {
                 JOptionPane.showMessageDialog(this, "Please enter valid numbers for Age, Height, and Weight.", "Input Error", JOptionPane.ERROR_MESSAGE);
@@ -521,7 +554,9 @@ public class calorieCalc extends javax.swing.JFrame {
         //</editor-fold>
 
         /* Create and display the form */
-        java.awt.EventQueue.invokeLater(() -> new calorieCalc().setVisible(true));
+       java.awt.EventQueue.invokeLater(() -> {
+           new calorieCalc(1).setVisible(true);
+        });
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

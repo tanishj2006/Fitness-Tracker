@@ -4,6 +4,10 @@
  */
 package db;
 
+/**
+ *
+ * @author pearl
+ */
 import java.sql.Connection;
 import java.sql.Statement;
 
@@ -19,19 +23,20 @@ public class DBSetup {
 
             // First drop child tables, then parent
             stmt.executeUpdate("SET FOREIGN_KEY_CHECKS = 0");
+            stmt.executeUpdate("DROP TABLE IF EXISTS calorie_records"); 
             stmt.executeUpdate("DROP TABLE IF EXISTS workouts");
             stmt.executeUpdate("DROP TABLE IF EXISTS meals");
             stmt.executeUpdate("DROP TABLE IF EXISTS users");
             stmt.executeUpdate("SET FOREIGN_KEY_CHECKS = 1");
 
             // Users table
-            stmt.executeUpdate("CREATE TABLE users ("
+           stmt.executeUpdate("CREATE TABLE users ("
                     + "id INT AUTO_INCREMENT PRIMARY KEY,"
                     + "name VARCHAR(50) UNIQUE NOT NULL,"
                     + "password VARCHAR(50) NOT NULL,"
                     + "weight DOUBLE,"
                     + "height DOUBLE)");
-
+                    
             // Meals table
             stmt.executeUpdate("CREATE TABLE meals ("
                     + "id INT AUTO_INCREMENT PRIMARY KEY,"
@@ -48,13 +53,21 @@ public class DBSetup {
                     + "workout_name VARCHAR(100),"
                     + "duration_mins INT,"
                     + "calories_burned INT,"
-                    + "date DATE DEFAULT CURRENT_DATE,"
                     + "FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE)");
 
             // Insert ek default user (id = 1)
             stmt.executeUpdate("INSERT INTO users (name, password, weight, height) "
                     + "VALUES ('testuser', '1234', 70, 175)");
 
+            stmt.executeUpdate("CREATE TABLE calorie_records ("
+                    + "id INT AUTO_INCREMENT PRIMARY KEY,"
+                    + "user_id INT NOT NULL,"
+                    + "age INT NOT NULL,"
+                    + "gender VARCHAR(10) NOT NULL,"
+                    + "height DOUBLE NOT NULL,"
+                    + "weight DOUBLE NOT NULL,"
+                    + "exercise_type VARCHAR(50) NOT NULL,"
+                    + "FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE)");
             System.out.println("Tables recreated successfully with default user!");
 
         } catch (Exception e) {
