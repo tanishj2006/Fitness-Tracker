@@ -36,11 +36,13 @@ public class mealTracker extends javax.swing.JFrame {
     private JButton saveButton, viewMealsButton, closeButton;
 
     private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(mealTracker.class.getName());
-    
+    private final int currentUserId;
     /**
      * Creates new form mealTracker
+     * @param currentUserId
      */
     public mealTracker(int currentUserId) {
+        this.currentUserId = currentUserId;
         UI();
     }
 
@@ -380,7 +382,9 @@ public class mealTracker extends javax.swing.JFrame {
         //</editor-fold>
 
         /* Create and display the form */
-        java.awt.EventQueue.invokeLater(() -> new mealTracker(currentUserId).setVisible(true));
+        java.awt.EventQueue.invokeLater(() -> {
+            new mealTracker(1).setVisible(true);
+        });
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

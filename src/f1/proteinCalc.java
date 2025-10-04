@@ -4,6 +4,8 @@
  */
 package f1;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
@@ -42,11 +44,13 @@ public class proteinCalc extends javax.swing.JFrame {
     private JLabel sedentaryProteinLabel;
     private JLabel activeProteinLabel;
     private JLabel intenseProteinLabel;
+    private final int currentUserId;
 
     /**
      * Creates new form proteinCalc
      */
     public proteinCalc(int currentUserId) {
+        this.currentUserId = currentUserId;
         UI();
     }
 
@@ -280,6 +284,31 @@ public class proteinCalc extends javax.swing.JFrame {
                 sedentaryProteinLabel.setText("Sedentary: " + sedentaryProtein + " g/day (RDA)");
                 activeProteinLabel.setText("Active: " + activeProtein + " g/day (General Fitness)");
                 intenseProteinLabel.setText("Intense: " + intenseProtein + " g/day (Muscle Building)");
+                
+                // Goal nikaalo jo user ne comboBox se select kiya hai
+        String goal = (String) exerciseTypeCombo.getSelectedItem();
+        double proteinTarget = 0;
+
+        if ("Sedentary".equals(goal)) proteinTarget = sedentaryProtein;
+        else if ("Active".equals(goal)) proteinTarget = activeProtein;
+        else if ("Intense".equals(goal)) proteinTarget = intenseProtein;
+
+        try (Connection conn = db.DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(
+                "INSERT INTO protein_records (user_id, weight, goal, protein_target) VALUES (?, ?, ?, ?)")) {
+
+            ps.setInt(1, currentUserId);   // current login user ka id
+            ps.setDouble(2, weight);       // entered weight
+            ps.setString(3, goal);         // goal type
+            ps.setDouble(4, proteinTarget);// calculated protein
+
+            ps.executeUpdate();
+            JOptionPane.showMessageDialog(this, "Protein record saved successfully!");
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Error saving protein record.", "DB Error", JOptionPane.ERROR_MESSAGE);
+        }
 
             } catch (NumberFormatException ex) {
                 JOptionPane.showMessageDialog(this, "Please enter a valid number for Weight.", "Input Error", JOptionPane.ERROR_MESSAGE);
@@ -477,7 +506,7 @@ public class proteinCalc extends javax.swing.JFrame {
         //</editor-fold>
 
         /* Create and display the form */
-        java.awt.EventQueue.invokeLater(() -> new proteinCalc(currentUserId).setVisible(true));
+        java.awt.EventQueue.invokeLater(() -> new proteinCalc(1).setVisible(true));
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
