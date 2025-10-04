@@ -196,7 +196,6 @@ for (int i = 0; i < buttons.length; i++) {
         JPanel dataPanel = new JPanel(new GridBagLayout());
         dataPanel.setOpaque(false);
 
-        Font titleFont = new Font("SansSerif", Font.BOLD, 22);
         Font dataFont = new Font("SansSerif", Font.BOLD, 18);
 
         GridBagConstraints dgc = new GridBagConstraints();
@@ -211,27 +210,23 @@ for (int i = 0; i < buttons.length; i++) {
         consumedLabel = new JLabel("Consumed: ---");
         burnedLabel = new JLabel("Burned: ---");
         netLabel = new JLabel("Net: ---");
-        proteinLabel = new JLabel("Protein: ---");
+
 
         consumedLabel.setFont(dataFont);
         burnedLabel.setFont(dataFont);
         netLabel.setFont(dataFont);
-        proteinLabel.setFont(dataFont);
-           
-        proteinLabel.setForeground(Color.BLACK);
+      
      
-        dataPanel.add(proteinLabel, dgc);
-        dgc.gridy = 3;
-        dgc.gridx = 0;
-        dgc.gridy = 0;
-        dataPanel.add(consumedLabel, dgc);
-        dgc.gridx = 0;
-        dgc.gridy = 1;
-        dataPanel.add(burnedLabel, dgc);
+         dgc.gridx = 0;
+         dgc.gridy = 0;
+         dataPanel.add(consumedLabel, dgc);
 
-        dgc.gridy = 2; 
-        dgc.insets = new Insets(20, 10, 10, 10); 
-        dataPanel.add(netLabel, dgc);
+         dgc.gridy = 1;
+         dataPanel.add(burnedLabel, dgc);
+
+         dgc.gridy = 2;
+         dgc.insets = new Insets(20, 10, 10, 10);
+         dataPanel.add(netLabel, dgc);
 
         dashboardPanel.add(dataPanel, BorderLayout.CENTER);
 
@@ -251,7 +246,6 @@ for (int i = 0; i < buttons.length; i++) {
     public void updateDashboardSummary() {
     int totalConsumed = 0;
     int totalBurned = 0;
-    String proteinSummary = "---";
 
     try (Connection conn = db.DBConnection.getConnection()) {
 
@@ -280,11 +274,6 @@ for (int i = 0; i < buttons.length; i++) {
                             "FROM protein_records WHERE user_id = ? ORDER BY id DESC LIMIT 1";
         try (PreparedStatement ps = conn.prepareStatement(proteinSql)) {
             ps.setInt(1, currentUserId);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                proteinSummary = rs.getInt("sedentary_protein") + " - " +
-                                 rs.getInt("intense_protein") + " g/day";
-            }
         }
 
     } catch (Exception e) {
@@ -298,7 +287,6 @@ for (int i = 0; i < buttons.length; i++) {
     burnedLabel.setText("Burned: " + totalBurned + " kcal");
     netLabel.setText("Net Calories: " + netCalories + " kcal");
     netLabel.setForeground(netColor);
-    proteinLabel.setText("Protein Target: " + proteinSummary);
 }
 
 
@@ -580,12 +568,10 @@ for (int i = 0; i < buttons.length; i++) {
         //</editor-fold>
 
         try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (Exception e) {
-            /* silently ignore */ }
-        /* Create and display the form */
-      java.awt.EventQueue.invokeLater(() -> new Login().setVisible(true));
-}
+    UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+    } catch (Exception e) {}
+    java.awt.EventQueue.invokeLater(() -> new Login().setVisible(true));
+ }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButton1;
