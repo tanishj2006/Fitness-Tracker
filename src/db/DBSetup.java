@@ -23,9 +23,11 @@ public class DBSetup {
 
             // First drop child tables, then parent
             stmt.executeUpdate("SET FOREIGN_KEY_CHECKS = 0");
+            stmt.executeUpdate("DROP TABLE IF EXISTS protein_records"); 
             stmt.executeUpdate("DROP TABLE IF EXISTS calorie_records"); 
             stmt.executeUpdate("DROP TABLE IF EXISTS workouts");
             stmt.executeUpdate("DROP TABLE IF EXISTS meals");
+            stmt.executeUpdate("DROP TABLE IF EXISTS calories"); 
             stmt.executeUpdate("DROP TABLE IF EXISTS users");
             stmt.executeUpdate("SET FOREIGN_KEY_CHECKS = 1");
 
@@ -68,6 +70,15 @@ public class DBSetup {
                     + "weight DOUBLE NOT NULL,"
                     + "exercise_type VARCHAR(50) NOT NULL,"
                     + "FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE)");
+            // Protein Records table
+            stmt.executeUpdate("CREATE TABLE protein_records ("
+                    + "id INT AUTO_INCREMENT PRIMARY KEY,"
+                    + "user_id INT NOT NULL,"
+                    + "weight DOUBLE NOT NULL,"       
+                    + "goal VARCHAR(50) NOT NULL,"     
+                    + "protein_target DOUBLE NOT NULL," 
+                    + "FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE)");
+
             System.out.println("Tables recreated successfully with default user!");
 
         } catch (Exception e) {

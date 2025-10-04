@@ -37,6 +37,7 @@ public class mainWindow extends javax.swing.JFrame {
     private JLabel consumedLabel;
     private JLabel burnedLabel;
     private JLabel netLabel;
+    private JLabel proteinLabel;   
 
     /**
      * Creates new form mainWindow
@@ -210,11 +211,17 @@ for (int i = 0; i < buttons.length; i++) {
         consumedLabel = new JLabel("Consumed: ---");
         burnedLabel = new JLabel("Burned: ---");
         netLabel = new JLabel("Net: ---");
+        proteinLabel = new JLabel("Protein: ---");
 
         consumedLabel.setFont(dataFont);
         burnedLabel.setFont(dataFont);
         netLabel.setFont(dataFont);
-
+        proteinLabel.setFont(dataFont);
+           
+        proteinLabel.setForeground(Color.BLACK);
+     
+        dataPanel.add(proteinLabel, dgc);
+        dgc.gridy = 3;
         dgc.gridx = 0;
         dgc.gridy = 0;
         dataPanel.add(consumedLabel, dgc);
@@ -242,19 +249,58 @@ for (int i = 0; i < buttons.length; i++) {
     }
 
     public void updateDashboardSummary() {
-        int totalConsumed = 2150; 
-        int totalBurned = 500;
-        int netCalories = totalConsumed - totalBurned;
-        // ------------------------------------------------
+    int totalConsumed = 0;
+    int totalBurned = 0;
+    String proteinSummary = "---";
 
-        Color netColor = (netCalories >= 0) ? new Color(220, 20, 60) : new Color(60, 179, 113);
+    try (Connection conn = db.DBConnection.getConnection()) {
 
-        consumedLabel.setText("Consumed: " + totalConsumed + " kcal");
-        burnedLabel.setText("Burned: " + totalBurned + " kcal");
-        netLabel.setText("Net Calories: " + netCalories + " kcal");
+        // Meals → Calories Consumed
+        String mealSql = "SELECT COALESCE(SUM(calories), 0) FROM meals WHERE user_id = ?";
+        try (PreparedStatement ps = conn.prepareStatement(mealSql)) {
+            ps.setInt(1, currentUserId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                totalConsumed = rs.getInt(1);
+            }
+        }
 
-        netLabel.setForeground(netColor);
+        // Workouts → Calories Burned
+        String workoutSql = "SELECT COALESCE(SUM(calories_burned), 0) FROM workouts WHERE user_id = ?";
+        try (PreparedStatement ps = conn.prepareStatement(workoutSql)) {
+            ps.setInt(1, currentUserId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                totalBurned = rs.getInt(1);
+            }
+        }
+
+        // Protein Records → Latest Protein Calculation
+        String proteinSql = "SELECT sedentary_protein, active_protein, intense_protein " +
+                            "FROM protein_records WHERE user_id = ? ORDER BY id DESC LIMIT 1";
+        try (PreparedStatement ps = conn.prepareStatement(proteinSql)) {
+            ps.setInt(1, currentUserId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                proteinSummary = rs.getInt("sedentary_protein") + " - " +
+                                 rs.getInt("intense_protein") + " g/day";
+            }
+        }
+
+    } catch (Exception e) {
+        e.printStackTrace();
     }
+
+    int netCalories = totalConsumed - totalBurned;
+    Color netColor = (netCalories >= 0) ? new Color(220, 20, 60) : new Color(60, 179, 113);
+
+    consumedLabel.setText("Consumed: " + totalConsumed + " kcal");
+    burnedLabel.setText("Burned: " + totalBurned + " kcal");
+    netLabel.setText("Net Calories: " + netCalories + " kcal");
+    netLabel.setForeground(netColor);
+    proteinLabel.setText("Protein Target: " + proteinSummary);
+}
+
 
     /**
      * This method is called from within the constructor to initialize the form.
